@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>This is the pacman!</title>
+    <link rel="stylesheet" href="pacman.css">
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script>
+        /* connecto to socket io sever */
+        const socket = io("http://localhost:8000");
+        /* this is the world*/
+        let world = [
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 3, 1, 1, 1, 2, 0, 1, 0, 1, 1, 1, 1, 1, 3, 1, 1, 1, 2, 0, 1, 0, 1, 1, 1, 1, 1, 0],
+                [0, 1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0],
+                [0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0],
+                [0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0],
+                [0, 1, 1, 1, 1, 1, 3, 3, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 3, 3, 1, 1, 1, 1, 1, 0],
+                [0, 0, 0, 0, 1, 0, 3, 0, 3, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 3, 0, 3, 0, 1, 0, 0, 0, 0],
+                [0, 1, 1, 1, 1, 0, 3, 3, 3, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 3, 3, 3, 0, 1, 1, 1, 1, 0],
+                [0, 1, 0, 0, 0, 0, 3, 0, 3, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 3, 0, 3, 0, 0, 0, 0, 1, 0],
+                [0, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0],
+                [0, 1, 0, 0, 0, 0, 3, 0, 3, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 3, 0, 3, 0, 0, 0, 0, 1, 0],
+                [0, 1, 1, 1, 1, 0, 3, 3, 3, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 3, 3, 3, 0, 1, 1, 1, 1, 0],
+                [0, 0, 0, 0, 1, 0, 3, 0, 3, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 3, 0, 3, 0, 1, 0, 0, 0, 0],
+                [0, 1, 1, 1, 1, 1, 3, 3, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 3, 3, 1, 1, 1, 1, 1, 0],
+                [0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0],
+                [0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0],
+                [0, 1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0],
+                [0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+            ];
+        /* this is the class world */
+        class World {
+            constructor(world){
+                this.world = world;
+                /* make four properties of ghosts*/
+                this.ghosts = [
+                    new Ghost(9, 9, 'ghost1.gif', this.world), new Ghost(11, 8, 'ghost2.gif', this.world), new Ghost(13, 9, 'ghost3.gif', this.world), new Ghost(11, 10, 'ghost4.gif', this.world)
+                ];
+            }
+            displayWorld(){
+                let worldHTML = '';
+                for(let x in this.world){
+                    worldHTML += '<div class="row">';
+                    for(let y in this.world[x]){
+                        switch (world[x][y]){
+                            case 0:
+                                worldHTML += '<div class="block"></div>';
+                                break;
+                            case 1: 
+                                worldHTML += '<div class="coin"></div>';
+                                break;
+                            case 2:
+                                worldHTML += '<div class="cherry"></div>';
+                                break;
+                            case 3:
+                                worldHTML += '<div class="empty"></div>';
+                                break;
+                        }
+                    }
+                    worldHTML += '</div>';
+                }
+                document.getElementById('world').innerHTML = worldHTML;
+                for(let x in this.ghosts){
+                    this.ghosts[x].displayGhost();
+                    this.ghosts[x].moveGhost();
+                }
+            }
+            updateWorld(world, pacmanX, pacmanY){
+                let worldHTML = '';
+                 for (let x in world) {
+                    worldHTML += '<div class="row">';
+                    for (let y in world[x]) {
+                        switch (world[x][y]) {
+                            case 0:
+                                worldHTML += '<div class="block"></div>';
+                                break;
+                            case 1:
+                                worldHTML += '<div class="coin"></div>';
+                                break;
+                            case 2:
+                                worldHTML += '<div class="cherry"></div>';
+                                break;
+                            case 3:
+                                worldHTML += '<div class="empty"></div>';
+                                break;
+                        }
+                    }
+                    worldHTML += '</div>';
+                }
+                document.getElementById('world').innerHTML = worldHTML;
+                for (let x in this.ghosts) {
+                    this.ghosts[x].moveGhost(this.world);
+                    this.ghosts[x].displayGhost();
+                    this.ghosts[x].eatPacman(pacmanX, pacmanY); 
+                }
+            }
+        }
+        /* this is the class pacman */
+        class Pacman extends World{
+            constructor(userName){
+                super(world);
+                this.world = world;
+                this.x = 3;
+                this.y= 3;
+                this.player = new Player(userName);
+                this.html = '<div class="pacman"></div>';
+                document.getElementById('world').innerHTML += this.html;
+            }
+            movePacman(keyCode){
+                switch (keyCode){
+                    case 39:
+                        this.y++;
+                        break;
+                    case 37:
+                        this.y--;
+                        break;
+                    case 38:
+                        this.x--;
+                        break;
+                    case 40:
+                        this.x++;
+                        break;
+                }
+                this.collisionDetection(keyCode);
+                this.displayPacman(keyCode);
+            }
+            /* also displays dynamic iamges when moving */
+            displayPacman(keyCode){
+                let pacmanImages = ['pacman.gif', 'pacmanLeft.gif', 'pacmanDown.gif', 'pacmanUp.gif'];
+                switch (keyCode){
+                    case 40:
+                        document.getElementById('world').innerHTML += '<div class="pacman" style="top:' + (this.x) * 25 + 'px; left:' + (this.y) * 25 + 'px; background-image: url(' + pacmanImages[2] + ')"></div>';
+                        break;
+                    case 39:
+                        document.getElementById('world').innerHTML += '<div class="pacman" style="top:' + (this.x) * 25 + 'px; left:' + (this.y) * 25 + 'px; background-image: url(' + pacmanImages[0] + ')"></div>';
+                        break;
+                    case 38:
+                        document.getElementById('world').innerHTML += '<div class="pacman" style="top:' + (this.x) * 25 + 'px; left:' + (this.y) * 25 + 'px; background-image: url(' + pacmanImages[3] + ')"></div>';
+                        break;
+                    case 37:
+                        document.getElementById('world').innerHTML += '<div class="pacman" style="top:' + (this.x) * 25 + 'px; left:' + (this.y) * 25 + 'px; background-image: url(' + pacmanImages[1] + ')"></div>';
+                        break;
+                }
+            }
+            collisionDetection(keyCode){
+                /* if its not a valid keyCodeode return false  */
+                if (keyCode > 40 || keyCode < 37) {
+                    return false;
+                }
+                let pacmanX = this.x - 2;
+                let pacmanY = this.y - 2;
+                let pacmanLocation = this.world[pacmanX][pacmanY];
+                switch (true){
+                    case (pacmanLocation == 0 && keyCode == 40):
+                        this.x--;
+                        break;
+                    case (pacmanLocation == 0 && keyCode == 39):
+                        this.y--;
+                        break;
+                    case (pacmanLocation == 0 && keyCode == 38):
+                        this.x++;
+                        break;
+                    case (pacmanLocation == 0 && keyCode == 37):
+                        this.y++;
+                        break;
+                    case (pacmanLocation == 1):
+                        this.world[pacmanX][pacmanY] = 3;
+                        this.player.updateScore('coins');
+                        break;
+                    case (pacmanLocation == 2):
+                        this.world[pacmanX][pacmanY] = 3;
+                        this.player.updateScore('cherry');
+                        break;
+                } 
+                this.player.displayScore();
+                this.updateWorld(this.world, this.x, this.y);
+            }
+        }
+    /* this is the ghost class */
+        class Ghost{
+            constructor(x, y, backgroundImage, world) {
+                this.x = x;
+                this.y = y
+                this.backgroundImage = backgroundImage;
+                this.world = world;
+                this.direction = 'down';
+                this.randomDirection = function(){
+                    switch(Math.floor(Math.random()*4)){
+                        case 0:
+                            this.direction = 'right';
+                            break;
+                        case 1:
+                            this.direction = 'up';
+                            break;
+                        case 2:
+                            this.direction = 'down';
+                            break;
+                        case 3:
+                            this.direction = 'left';
+                            break;
+                    }
+                    return this.moveGhost();
+                };
+            }
+            displayGhost() {
+                document.getElementById('world').innerHTML += '<div class="ghost" style="top:' + (this.x) * 25 + 'px; left:' + (this.y) * 25 + 'px; background-image: url(' + this.backgroundImage + ')""></div>';
+            }
+            moveGhost(){
+                let ghostX = this.x - 2;
+                let ghostY = this.y - 2;
+                switch (true){
+                    case (this.direction == 'down' && this.world[ghostX + 1][ghostY] != 0):
+                        return this.x++;
+                    case (this.direction == 'up' && this.world[ghostX - 1][ghostY] != 0):
+                        return this.x--;
+                    case this.direction == 'right' && this.world[ghostX][ghostY + 1] != 0:
+                        return this.y++;
+                    case this.direction == 'left' && this.world[ghostX][ghostY - 1] != 0:
+                        return this.y--;
+                    default:
+                        this.randomDirection();
+                }
+            }
+            eatPacman(pacmanX, pacmanY){
+                if(this.x == pacmanX && this.y == pacmanY){
+                    alert('game over!');
+                }
+                
+            }
+        }
+        /* this is the class player */
+        class Player{
+            constructor(name){
+                this.name = name;
+                this.score = 0;
+            }
+            updateScore(eatingType){
+                switch (eatingType){
+                    case 'coins':
+                        this.score += 10;
+                        break;
+                    case 'cherry':
+                        this.score += 200;
+                        break;
+                }
+                socket.emit('newScore', { score: this.score, name: this.name });
+                this.displayScore();
+            }
+            displayScore(){
+                document.getElementById('score').innerHTML = this.score;
+            }
+            reset(){
+                this.score = 0;
+            }
+        }
+        var socketId = '';
+        /* mimics jquery document.ready */
+        window.onload = (event) => {
+            /* get the name of the user on load */
+            let userName = prompt('Please enter your name');
+            if(userName == '' || typeof(userName) === 'object'){
+               location.reload();
+            }
+            else{
+                socket.emit('newUser', {newUser:userName});
+            }
+
+            /* make an instance for pacman and world and display them  */
+            let world1 = new World(world);
+            world1.displayWorld();
+            /* make an instance of pacman */
+            let pacman = new Pacman(userName);
+            let x = document.getElementById('world');
+            /* on form submit emit a new message */
+            $('form').on('submit', function () {
+                /* get message data and clear form */
+                let messageContent = document.getElementById('message').value;
+                if(messageContent == ''){
+                    return false;
+                }
+                document.getElementById('message').value = '';
+                socket.emit('sendMessage', { sender:userName, message: messageContent });
+                return false;
+            });
+            document.addEventListener('keydown', function(e){
+                pacman.movePacman(e.keyCode);
+            });
+
+            /* socket on  */
+
+                
+                socket.on('serveSocketId', function (socketId) {
+                    socketId = socketId;
+                    console.log(socketId);
+                });
+
+                socket.on('newUserjoined', function (newUser) {
+                    document.getElementById('messages').innerHTML += '<p><span>' + newUser.newUser + '</span> has joined us!! </p>';
+                });
+
+                socket.on('newMessage', function (message) {
+                    let newMessage = '<p> <span>' + message.sender + '</span>:         ' + message.message + '</p>';
+                    /* get the messages id and append the message and scrol ldown */
+                    let messageElement = document.getElementById('messages');
+                    messageElement.innerHTML += newMessage;
+                    messageElement.scrollTop = messageElement.scrollHeight;
+                });
+
+                socket.on('updateOponentCard', function (players) {
+                    alert(socketId);
+                    console.log(socketId);
+                    for (let x in players) {
+                        if(players[x].socketId != socketId){
+                            console.log('ehre there~!');
+                        }
+                    }
+                });
+    
+        }
+    </script>
+</head>
+<body>
+    <div class="score">Your Score: <span id="score">0</span></div>
+    <div id="world"></div>
+    <aside>
+        <div class="oponents">
+            <div class="opponentCard" id="1">
+                <h1>KB <span>250</span></h1>
+            </div>
+            <div class="opponentCard" id="2">
+                <h1>KB <span>250</span></h1> 
+            </div>
+        </div>
+    </aside>
+    <section>
+        <div class="messages" id="messages"></div>
+        <form action="asdsad" method="post">
+            <input type="text" name="message" id="message" placeholder="Input message here">
+        </form>
+    </section>
+</body>
+</html>
